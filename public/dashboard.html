@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Student Dashboard</h1>
+    <div id="majors-container">
+      <h2>Your Majors and Grades</h2>
+      <div id="majors"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/users/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          const majorsContainer = document.getElementById('majors');
+          majorsContainer.innerHTML = '';
+
+          data.majors.forEach(major => {
+            const majorElement = document.createElement('div');
+            majorElement.classList.add('major');
+            majorElement.innerHTML = `
+              <h3>${major.major.name}</h3>
+              <p>Grades: ${major.grades.join(', ')}</p>
+            `;
+            majorsContainer.appendChild(majorElement);
+          });
+        } else {
+          alert(data.message);
+          window.location.href = '/login.html';
+        }
+      } catch (error) {
+        console.error('Error fetching student data:', error);
+        window.location.href = '/login.html';
+      }
+    });
+  </script>
+</body>
+</html>

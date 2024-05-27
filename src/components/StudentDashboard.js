@@ -3,85 +3,49 @@ import axios from 'axios';
 import './StudentDashboard.css';
 
 function StudentDashboard() {
-  const [courses, setCourses] = useState([]);
-  const [availableCourses, setAvailableCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState('');
+  const [student, setStudent] = useState(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchStudentData = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/students/courses', {
+        const response = await axios.get('http://localhost:3001/api/users/me', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
-        setCourses(response.data);
+        setStudent(response.data);
+        console.log(response.data); // Log response data
       } catch (error) {
-        console.error('Error fetching student courses', error);
+        console.error('Error fetching student data', error);
       }
     };
 
-    const fetchAvailableCourses = async () => {
-      try {
-        const response = await axios.get('http://localhost:3001/api/courses');
-        setAvailableCourses(response.data);
-      } catch (error) {
-        console.error('Error fetching available courses', error);
-      }
-    };
-
-    fetchCourses();
-    fetchAvailableCourses();
+    fetchStudentData();
   }, []);
 
-  const handleEnroll = async () => {
-    if (!selectedCourse) {
-      alert('Please select a course to enroll');
-      return;
-    }
-
-    try {
-      await axios.post(
-        'http://localhost:3001/api/students/enroll',
-        { courseId: selectedCourse },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-      alert('Enrolled successfully');
-      setSelectedCourse('');
-    } catch (error) {
-      console.error('Error enrolling in course', error);
-      alert('Failed to enroll');
-    }
-  };
+  if (!student) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="student-dashboard">
-      <h1>Student Dashboard</h1>
-      <h2>My Courses</h2>
-      <ul>
-        {courses.map(course => (
-          <li key={course._id}>{course.name}</li>
-        ))}
-      </ul>
-      <h2>Enroll in a new course</h2>
-      <div className="enroll-section">
-        <select
-          value={selectedCourse}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-          className="course-select"
-        >
-          <option value="">Select a course</option>
-          {availableCourses.map(course => (
-            <option key={course._id} value={course._id}>
-              {course.name}
-            </option>
-          ))}
-        </select>
-        <button onClick={handleEnroll} className="enroll-button">Enroll</button>
+    <div className="container">
+      <div className="student-dashboard">
+        <h1 className="dashboard-header">Student Dashboard</h1>
+        <div className="student-info">
+          <h2>{student.username}</h2>
+          <p>Department: {student.department}</p>
+        </div>
+        <div className="majors-section">
+          <h2 className="dashboard-subheader">Majors and Grades</h2>
+          <div className="majors-list">
+            {student.majors.map((major, index) => (
+              <div key={index} className="major-card">
+                <h3>{major.major}</h3>
+                <p>Grades: {major.grades.join(', ')}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

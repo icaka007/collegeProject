@@ -1,101 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './TeacherDashboard.css';
 
 function TeacherDashboard() {
-  const [courses, setCourses] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [grades, setGrades] = useState({});
+  const [teacher, setTeacher] = useState(null);
 
   useEffect(() => {
-    const fetchCourses = async () => {
+    const fetchTeacherData = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/teachers/courses', {
+        const response = await axios.get('http://localhost:3001/api/users/me', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         });
-        setCourses(response.data);
+        setTeacher(response.data);
       } catch (error) {
-        console.error('Error fetching teacher courses', error);
+        console.error('Error fetching teacher data', error);
       }
     };
 
-    fetchCourses();
+    fetchTeacherData();
   }, []);
 
-  const fetchStudents = async (courseId) => {
-    try {
-      const response = await axios.get(`http://localhost:3001/api/courses/${courseId}/students`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      setStudents(response.data);
-    } catch (error) {
-      console.error('Error fetching students', error);
-    }
-  };
-
-  const handleGradeChange = (studentId, grade) => {
-    setGrades({
-      ...grades,
-      [studentId]: grade
-    });
-  };
-
-  const handleSaveGrades = async () => {
-    try {
-      await axios.post(
-        `http://localhost:3001/api/courses/${selectedCourse}/grades`,
-        { grades },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
-      alert('Grades saved successfully');
-    } catch (error) {
-      console.error('Error saving grades', error);
-      alert('Failed to save grades');
-    }
-  };
+  if (!teacher) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div>
-      <h1>Teacher Dashboard</h1>
-      <h2>My Courses</h2>
-      <ul>
-        {courses.map(course => (
-          <li key={course._id}>
-            <button onClick={() => {
-              setSelectedCourse(course._id);
-              fetchStudents(course._id);
-            }}>
-              {course.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-      {selectedCourse && (
-        <div>
-          <h2>Manage Grades for {courses.find(course => course._id === selectedCourse).name}</h2>
-          <ul>
-            {students.map(student => (
-              <li key={student._id}>
-                {student.name}
-                <input
-                  type="number"
-                  value={grades[student._id] || ''}
-                  onChange={(e) => handleGradeChange(student._id, e.target.value)}
-                />
-              </li>
-            ))}
-          </ul>
-          <button onClick={handleSaveGrades}>Save Grades</button>
+    <div className="container">
+      <div className="teacher-dashboard">
+        <h1 className="dashboard-header">Teacher Dashboard</h1>
+        <div className="teacher-info">
+          <h2>{teacher.username}</h2>
+          <p>Department: {teacher.department}</p>
+          {teacher.majors && teacher.majors.length > 0 && (
+            <div>
+              <h3>Major: {teacher.majors[0].major}</h3>
+            </div>
+          )}
         </div>
-      )}
+        <div className="students-section">
+          <h2 className="dashboard-subheader">Students and Grades</h2>
+          <div className="students-list">
+            {teacher.students.map((student, index) => (
+              <div key={index} className="student-card">
+                <h3>{student.username}</h3>
+                <p>Grades: {student.grades.join(', ')}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
